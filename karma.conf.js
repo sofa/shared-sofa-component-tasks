@@ -8,15 +8,6 @@ module.exports = function (karma) {
         /**
          * This is the list of file patterns to load into the browser during testing.
          */
-        files: [
-            'node_modules/sofa-core/dist/sofa.core.js',
-            'node_modules/sofa-storages/dist/sofa.storages.js',
-            'node_modules/sofa-testing/mocks/sofa.config.mock.js',
-            'node_modules/angular/angular.js',
-            'node_modules/angular-mocks/angular-mocks.js',
-            'src/**/*.js',
-            'test/**/*.spec.js'
-        ],
         exclude: [],
         frameworks: ['jasmine'],
         plugins: [

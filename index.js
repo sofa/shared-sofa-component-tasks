@@ -30,6 +30,13 @@ var PREFIX_FILE = 'component.prefix',
     SOURCE_SASS_FILES = 'src/*.scss',
     SOURCE_TEMPLATE_FILES = 'src/**/*.tpl.html',
     DIST_DIR = 'dist';
+    KARMA_TEST_FILES = [
+      'node_modules/sofa-core/dist/sofa.core.js',
+      'node_modules/sofa-storages/dist/sofa.storages.js',
+      'node_modules/sofa-testing/mocks/sofa.config.mock.js',
+      'node_modules/angular/angular.js',
+      'node_modules/angular-mocks/angular-mocks.js',
+    ];
 
 var banner = fs.readFileSync(path.join(__dirname, HEADER_FILE), 'utf-8');
 var componentPrefix = fs.readFileSync(PREFIX_FILE, 'utf-8');
@@ -41,6 +48,9 @@ jshintConfig.lookup = false;
 module.exports = function (gulp, config) {
   
   var componentName = changeCase.camelCase(config.pkg.name.replace('angular-', ''));
+  KARMA_TEST_FILES.push(path.join(config.baseDir, 'src/**/*.js'));
+  KARMA_TEST_FILES.push(path.join(config.baseDir, 'test/**/*.spec.js'));
+
   var jshintTasks = lazypipe()
     .pipe(jshint, jshintConfig)
     .pipe(jshint.reporter, stylish)
@@ -68,14 +78,16 @@ module.exports = function (gulp, config) {
 
   gulp.task('test', function (done) {
     karma.start({
-      configFile: path.join(config.baseDir, KARMA_CONF_FILE)
+      configFile: path.join(__dirname, KARMA_CONF_FILE),
+      files: KARMA_TEST_FILES
     }, done);
   });
 
   gulp.task('test:continuous', ['templates'], function (done) {
     karma.start({
-      configFile: path.join(config.baseDir, KARMA_CONF_FILE),
-      singleRun: true
+      configFile: path.join(__dirname, KARMA_CONF_FILE),
+      singleRun: true,
+      files: KARMA_TEST_FILES
     }, function () {
       done();
     });
@@ -83,8 +95,9 @@ module.exports = function (gulp, config) {
 
   gulp.task('test:debug', function (done) {
     karma.start({
-      configFile: path.join(config.baseDir, KARMA_CONF_FILE),
-      singleRun: false
+      configFile: path.join(__dirname, KARMA_CONF_FILE),
+      singleRun: false,
+      files: KARMA_TEST_FILES
     }, done);
   });
 
