@@ -22,6 +22,7 @@ var html2js = require('gulp-ng-html2js');
 var PREFIX_FILE = 'component.prefix',
     SUFFIX_FILE = 'component.suffix',
     HEADER_FILE = 'header.txt',
+    JSHINT_FILE = '.jshintrc',
     CHANGELOG_FILE = 'CHANGELOG.md',
     KARMA_CONF_FILE = 'karma.conf.js',
     SOURCE_SOFA_JS_FILE = 'src/sofa.js',
@@ -34,11 +35,14 @@ var banner = fs.readFileSync(path.join(__dirname, HEADER_FILE), 'utf-8');
 var componentPrefix = fs.readFileSync(PREFIX_FILE, 'utf-8');
 var componentSuffix = fs.readFileSync(SUFFIX_FILE, 'utf-8');
 
+var jshintConfig = JSON.parse(fs.readFileSync(path.join(__dirname, JSHINT_FILE), 'utf-8'));
+jshintConfig.lookup = false;
+
 module.exports = function (gulp, config) {
   
   var componentName = changeCase.camelCase(config.pkg.name.replace('angular-', ''));
   var jshintTasks = lazypipe()
-    .pipe(jshint)
+    .pipe(jshint, jshintConfig)
     .pipe(jshint.reporter, stylish)
     .pipe(jshint.reporter, 'fail');
 
