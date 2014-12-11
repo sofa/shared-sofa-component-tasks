@@ -132,10 +132,12 @@ module.exports = function (gulp, config) {
     .pipe(gulp.dest(DIST_DIR));
   });
 
-  gulp.task('styles', function () {
+  gulp.task('styles', ['clean'], function () {
     return gulp.src(SOURCE_SASS_FILES)
       .pipe(sass())
+      .pipe(gulp.dest(DIST_DIR))
       .pipe(cssmin())
+      .pipe(rename({extname: '.min.css'}))
       .pipe(gulp.dest(DIST_DIR));
   });
 
