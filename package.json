@@ -19,7 +19,7 @@
     "url": "https://github.com/sofa/shared-sofa-component-tasks/issues"
   },
   "homepage": "https://github.com/sofa/shared-sofa-component-tasks",
-  "devDependencies": {
+  "dependencies": {
     "angular": "^1.3.5",
     "angular-mocks": "^1.3.5",
     "change-case": "^2.1.5",
