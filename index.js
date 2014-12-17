@@ -29,6 +29,7 @@ var PREFIX_FILE = 'component.prefix',
     SOURCE_JS_FILES = 'src/**/*.js',
     SOURCE_SASS_FILES = 'src/*.scss',
     SOURCE_TEMPLATE_FILES = 'src/**/*.tpl.html',
+    SOURCE_SPEC_FILES = 'test/**/*.spec.js',
     DIST_DIR = 'dist';
     KARMA_TEST_FILES = [
       'node_modules/sofa-core/dist/sofa.core.js',
@@ -48,8 +49,8 @@ jshintConfig.lookup = false;
 module.exports = function (gulp, config) {
   
   var componentName = changeCase.camelCase(config.pkg.name.replace('angular-', ''));
-  KARMA_TEST_FILES.push(path.join(config.baseDir, 'src/**/*.js'));
-  KARMA_TEST_FILES.push(path.join(config.baseDir, 'test/**/*.spec.js'));
+  KARMA_TEST_FILES.push(path.join(config.baseDir, SOURCE_JS_FILES));
+  KARMA_TEST_FILES.push(path.join(config.baseDir, SOURCE_SPEC_FILES));
 
   var jshintTasks = lazypipe()
     .pipe(jshint, jshintConfig)
@@ -62,12 +63,12 @@ module.exports = function (gulp, config) {
   });
 
   gulp.task('jshint:src', function () {
-    return gulp.src(['src/**/*.js', '!src/**/*.tpl.js'])
+    return gulp.src([SOURCE_JS_FILES, '!src/**/*.tpl.js'])
       .pipe(jshintTasks());
   });
 
   gulp.task('jshint:specs', function () {
-    return gulp.src('test/**/*.spec.js')
+    return gulp.src(SOURCE_SPEC_FILES)
       .pipe(jshintTasks());
   });
 
