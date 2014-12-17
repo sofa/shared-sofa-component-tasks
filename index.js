@@ -49,6 +49,13 @@ jshintConfig.lookup = false;
 module.exports = function (gulp, config) {
   
   var componentName = changeCase.camelCase(config.pkg.name.replace('angular-', ''));
+
+  config.testDependencyFiles = config.testDependencyFiles || [];
+
+  KARMA_TEST_FILES.concat(config.testDependencyFiles.map(function (file) {
+    return path.join(config.baseDir, file);
+  }));
+
   KARMA_TEST_FILES.push(path.join(config.baseDir, SOURCE_JS_FILES));
   KARMA_TEST_FILES.push(path.join(config.baseDir, SOURCE_SPEC_FILES));
 
