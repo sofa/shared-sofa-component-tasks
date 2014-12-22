@@ -52,7 +52,7 @@ module.exports = function (gulp, config) {
 
   config.testDependencyFiles = config.testDependencyFiles || [];
 
-  KARMA_TEST_FILES.concat(config.testDependencyFiles.map(function (file) {
+  KARMA_TEST_FILES = KARMA_TEST_FILES.concat(config.testDependencyFiles.map(function (file) {
     return path.join(config.baseDir, file);
   }));
 
