@@ -7,6 +7,8 @@ var del = require('del');
 var vinylPaths = require('vinyl-paths');
 var stylish = require('jshint-stylish');
 var conventionalChangelog = require('conventional-changelog');
+var exec = require('child_process').exec;
+var minimist = require('minimist');
 
 var jshint = require('gulp-jshint');
 var sass = require('gulp-sass');
@@ -18,11 +20,14 @@ var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
 var html2js = require('gulp-ng-html2js');
+var bump = require('gulp-bump');
 
 var PREFIX_FILE = 'component.prefix',
     SUFFIX_FILE = 'component.suffix',
     HEADER_FILE = 'header.txt',
     JSHINT_FILE = '.jshintrc',
+    BOWER_JSON_FILE = 'bower.json',
+    PACKAGE_JSON_FILE = 'package.json',
     CHANGELOG_FILE = 'CHANGELOG.md',
     KARMA_CONF_FILE = 'karma.conf.js',
     SOURCE_SOFA_JS_FILE = 'src/sofa.js',
@@ -46,10 +51,18 @@ var componentSuffix = fs.readFileSync(SUFFIX_FILE, 'utf-8');
 var jshintConfig = JSON.parse(fs.readFileSync(path.join(__dirname, JSHINT_FILE), 'utf-8'));
 jshintConfig.lookup = false;
 
+var argv = minimist(process.argv.slice(2));
+var versionType = null;
+
+['prerelease', 'minor', 'patch', 'major'].forEach(function (type) {
+  if (argv[type]) {
+    versionType = type;
+  }
+});
+
 module.exports = function (gulp, config) {
   
   var componentName = changeCase.camelCase(config.pkg.name.replace('angular-', ''));
-
   config.testDependencyFiles = config.testDependencyFiles || [];
 
   KARMA_TEST_FILES = KARMA_TEST_FILES.concat(config.testDependencyFiles.map(function (file) {
@@ -128,10 +141,21 @@ module.exports = function (gulp, config) {
     });
   });
 
+  gulp.task('bump', function () {
+    return gulp.src([
+      path.join(config.baseDir, BOWER_JSON_FILE),
+      path.join(config.baseDir, PACKAGE_JSON_FILE)
+    ]).pipe(bump({ type: versionType }))
+      .pipe(gulp.dest(config.baseDir));
+  });
+
   gulp.task('build', ['scripts', 'styles']);
   gulp.task('default', ['build']);
 
   gulp.task('scripts', ['clean', 'jshint', 'test:continuous'], function () {
+
+    var date = new Date();
+
     return gulp.src([
       SOURCE_SOFA_JS_FILE,
       SOURCE_JS_FILES
@@ -145,14 +169,14 @@ module.exports = function (gulp, config) {
     .pipe(footer(componentSuffix))
     .pipe(header(banner, {
       pkg: config.pkg,
-      date: new Date()
+      date: date
     }))
     .pipe(gulp.dest(DIST_DIR))
     .pipe(uglify())
     .pipe(rename({extname: '.min.js'}))
     .pipe(header(banner, {
       pkg: config.pkg,
-      date: new Date()
+      date: date
     }))
     .pipe(gulp.dest(DIST_DIR));
   });
@@ -164,6 +188,24 @@ module.exports = function (gulp, config) {
       .pipe(cssmin())
       .pipe(rename({extname: '.min.css'}))
       .pipe(gulp.dest(DIST_DIR));
+  });
+
+  gulp.task('deploy', ['bump', 'build', 'changelog'], function (done) {
+    var version = JSON.parse(fs.readFileSync(path.join(config.baseDir, PACKAGE_JSON_FILE), 'utf-8')).version;
+    var commitMessage = 'chore(' + componentName + '): release ' + version;
+
+    var commands = [
+      'git add .',
+      'git commit -m "' + commitMessage + '"',
+      'git tag ' + version,
+      'git push --tags origin master',
+      'npm publish'
+    ].join(' && ');
+
+    exec(commands, function (err, stdout) {
+      console.log(stdout);
+      done(err);
+    });
   });
 
   gulp.task('watch', ['build'], function () {
