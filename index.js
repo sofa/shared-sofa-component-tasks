@@ -31,6 +31,7 @@ var PREFIX_FILE = 'component.prefix',
     CHANGELOG_FILE = 'CHANGELOG.md',
     KARMA_CONF_FILE = 'karma.conf.js',
     SOURCE_SOFA_JS_FILE = 'src/sofa.js',
+    SOURCE_NG_MODULE_FILE = 'src/module.js',
     SOURCE_JS_FILES = 'src/**/*.js',
     SOURCE_SASS_FILES = 'src/*.scss',
     SOURCE_TEMPLATE_FILES = 'src/**/*.tpl.html',
@@ -158,6 +159,7 @@ module.exports = function (gulp, config) {
 
     return gulp.src([
       SOURCE_SOFA_JS_FILE,
+      SOURCE_NG_MODULE_FILE,
       SOURCE_JS_FILES
     ])
     .pipe(ngAnnotate({
