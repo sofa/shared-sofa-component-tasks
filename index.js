@@ -150,8 +150,38 @@ module.exports = function (gulp, config) {
       .pipe(gulp.dest(config.baseDir));
   });
 
-  gulp.task('build', ['scripts', 'styles']);
+  gulp.task('build', ['scripts', 'copy', 'styles']);
   gulp.task('default', ['build']);
+
+  gulp.task('copy', ['styles', 'scripts'], function () {
+
+    var date = new Date();
+
+    return gulp.src('src/**/*.angular.js', { base: 'src/' })
+      .pipe(ngAnnotate({
+        single_quote: true,
+        add: true
+      }))
+      .pipe(header(componentPrefix))
+      .pipe(footer(componentSuffix))
+      .pipe(header(banner, {
+        pkg: config.pkg,
+        date: date
+      }))
+      .pipe(rename({
+        basename: componentName + '.angular',
+      }))
+      .pipe(gulp.dest(DIST_DIR))
+      .pipe(uglify())
+      .pipe(rename({
+        extname: '.min.js'
+      }))
+      .pipe(header(banner, {
+        pkg: config.pkg,
+        date: date
+      }))
+      .pipe(gulp.dest(DIST_DIR));
+  });
 
   gulp.task('scripts', ['clean', 'jshint', 'test:continuous'], function () {
 

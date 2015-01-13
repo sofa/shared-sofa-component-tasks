@@ -39,6 +39,7 @@
     ],
     "globals": {
         "cc": true,
+        "sofa": true,
         "angular": false,
         "window": true
     }
