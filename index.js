@@ -18,12 +18,15 @@ var header = require('gulp-header');
 var footer = require('gulp-footer');
 var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
+var ifThen = require('gulp-if');
 var rename = require('gulp-rename');
 var html2js = require('gulp-ng-html2js');
 var bump = require('gulp-bump');
 
 var PREFIX_FILE = 'component.prefix',
     SUFFIX_FILE = 'component.suffix',
+    PREFIX_NG_FILE = 'component.prefix.angular',
+    SUFFIX_NG_FILE = 'component.suffix.angular',
     HEADER_FILE = 'header.txt',
     JSHINT_FILE = '.jshintrc',
     BOWER_JSON_FILE = 'bower.json',
@@ -46,8 +49,10 @@ var PREFIX_FILE = 'component.prefix',
     ];
 
 var banner = fs.readFileSync(path.join(__dirname, HEADER_FILE), 'utf-8');
-var componentPrefix = fs.readFileSync(PREFIX_FILE, 'utf-8');
-var componentSuffix = fs.readFileSync(SUFFIX_FILE, 'utf-8');
+var componentPrefix = fs.readFileSync(path.join(__dirname, PREFIX_FILE), 'utf-8');
+var componentSuffix = fs.readFileSync(path.join(__dirname, SUFFIX_FILE), 'utf-8');
+var componentNGPrefix = fs.readFileSync(path.join(__dirname, PREFIX_NG_FILE), 'utf-8');
+var componentNGSuffix = fs.readFileSync(path.join(__dirname, SUFFIX_NG_FILE), 'utf-8');
 
 var jshintConfig = JSON.parse(fs.readFileSync(path.join(__dirname, JSHINT_FILE), 'utf-8'));
 jshintConfig.lookup = false;
@@ -65,6 +70,8 @@ module.exports = function (gulp, config) {
   
   var componentName = changeCase.camelCase(config.pkg.name.replace('angular-', ''));
   config.testDependencyFiles = config.testDependencyFiles || [];
+
+  var isAngularPackage = config.pkg.name.indexOf('angular-') != -1;
 
   KARMA_TEST_FILES = KARMA_TEST_FILES.concat(config.testDependencyFiles.map(function (file) {
     return path.join(config.baseDir, file);
@@ -162,8 +169,8 @@ module.exports = function (gulp, config) {
         single_quote: true,
         add: true
       }))
-      .pipe(header(componentPrefix))
-      .pipe(footer(componentSuffix))
+      .pipe(header(componentNGPrefix))
+      .pipe(footer(componentNGSuffix))
       .pipe(header(banner, {
         pkg: config.pkg,
         date: date
@@ -197,8 +204,8 @@ module.exports = function (gulp, config) {
       add: true
     }))
     .pipe(concat(componentName + '.js'))
-    .pipe(header(componentPrefix))
-    .pipe(footer(componentSuffix))
+    .pipe(ifThen(isAngularPackage, header(componentNGPrefix), header(componentPrefix)))
+    .pipe(ifThen(isAngularPackage, footer(componentNGSuffix), footer(componentSuffix)))
     .pipe(header(banner, {
       pkg: config.pkg,
       date: date
