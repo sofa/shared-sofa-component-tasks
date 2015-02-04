@@ -77,7 +77,15 @@ module.exports = function (gulp, config) {
     return path.join(config.baseDir, file);
   }));
 
-  KARMA_TEST_FILES.push(path.join(config.baseDir, SOURCE_JS_FILES));
+
+  if (config.sourceFiles) {
+    KARMA_TEST_FILES = KARMA_TEST_FILES.concat(config.sourceFiles.map(function (file) {
+      return path.join(config.baseDir, file);
+    }));
+  } else {
+    KARMA_TEST_FILES.push(path.join(config.baseDir, SOURCE_JS_FILES));
+  }
+
   KARMA_TEST_FILES.push(path.join(config.baseDir, SOURCE_SPEC_FILES));
 
   var jshintTasks = lazypipe()
