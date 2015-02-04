@@ -35,6 +35,7 @@ var PREFIX_FILE = 'component.prefix',
     KARMA_CONF_FILE = 'karma.conf.js',
     SOURCE_SOFA_JS_FILE = 'src/sofa.js',
     SOURCE_NG_MODULE_FILE = 'src/module.js',
+    SOURCE_NG_JS_FILES = 'src/*.angular.js',
     SOURCE_JS_FILES = 'src/**/*.js',
     SOURCE_SASS_FILES = 'src/*.scss',
     SOURCE_TEMPLATE_FILES = 'src/**/*.tpl.html',
@@ -172,19 +173,17 @@ module.exports = function (gulp, config) {
 
     var date = new Date();
 
-    return gulp.src('src/**/*.angular.js', { base: 'src/' })
+    return gulp.src(['src/module.js', 'src/*angular.js'], { base: 'src/' })
       .pipe(ngAnnotate({
         single_quote: true,
         add: true
       }))
+      .pipe(concat(componentName + '.angular.js'))
       .pipe(header(componentNGPrefix))
       .pipe(footer(componentNGSuffix))
       .pipe(header(banner, {
         pkg: config.pkg,
         date: date
-      }))
-      .pipe(rename({
-        basename: componentName + '.angular',
       }))
       .pipe(gulp.dest(DIST_DIR))
       .pipe(uglify())
@@ -202,9 +201,10 @@ module.exports = function (gulp, config) {
 
     var date = new Date();
 
-    return gulp.src([
+    gulp.src([
       SOURCE_SOFA_JS_FILE,
-      SOURCE_NG_MODULE_FILE,
+      '!src/**/*.angular.js',
+      '!src/module.js',
       SOURCE_JS_FILES
     ])
     .pipe(ngAnnotate({
@@ -212,8 +212,8 @@ module.exports = function (gulp, config) {
       add: true
     }))
     .pipe(concat(componentName + '.js'))
-    .pipe(ifThen(isAngularPackage, header(componentNGPrefix), header(componentPrefix)))
-    .pipe(ifThen(isAngularPackage, footer(componentNGSuffix), footer(componentSuffix)))
+    .pipe(header(componentPrefix))
+    .pipe(footer(componentSuffix))
     .pipe(header(banner, {
       pkg: config.pkg,
       date: date
@@ -226,6 +226,8 @@ module.exports = function (gulp, config) {
       date: date
     }))
     .pipe(gulp.dest(DIST_DIR));
+
+
   });
 
   gulp.task('styles', ['clean'], function () {
