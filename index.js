@@ -212,8 +212,8 @@ module.exports = function (gulp, config) {
       add: true
     }))
     .pipe(concat(componentName + '.js'))
-    .pipe(header(componentPrefix))
-    .pipe(footer(componentSuffix))
+    .pipe(ifThen(isAngularPackage, header(componentNGPrefix), header(componentPrefix)))
+    .pipe(ifThen(isAngularPackage, footer(componentNGSuffix), footer(componentSuffix)))
     .pipe(header(banner, {
       pkg: config.pkg,
       date: date
