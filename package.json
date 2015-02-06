@@ -1,6 +1,6 @@
 {
   "name": "shared-sofa-component-tasks",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "Shared gulp tasks for sofa component builds",
   "main": "index.js",
   "scripts": {
