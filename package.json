@@ -49,7 +49,7 @@
     "lazypipe": "^0.2.2",
     "minimist": "^1.1.0",
     "rimraf": "^2.2.8",
-    "sofa-core": "^0.12.0",
+    "sofa-core": "^0.14.0",
     "sofa-storages": "^0.4.0",
     "sofa-testing": "^0.7.0",
     "vinyl-paths": "^1.0.0"
