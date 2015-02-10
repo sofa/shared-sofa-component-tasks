@@ -42,7 +42,7 @@ var PREFIX_FILE = 'component.prefix',
     SOURCE_SPEC_FILES = 'test/**/*.spec.js',
     DIST_DIR = 'dist';
     KARMA_TEST_FILES = [
-      'node_modules/sofa-core/dist/sofa.core.js',
+      'node_modules/sofa-core/dist/sofaCore.js',
       'node_modules/sofa-storages/dist/sofa.storages.js',
       'node_modules/sofa-testing/mocks/sofa.config.mock.js',
       'node_modules/angular/angular.js',
