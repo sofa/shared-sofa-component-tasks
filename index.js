@@ -68,6 +68,14 @@ var versionType = null;
 });
 
 module.exports = function (gulp, config) {
+
+  if (config.componentPrefix) {
+    componentPrefix = fs.readFileSync(path.join(config.baseDir, config.componentPrefix), 'utf-8');
+  }
+
+  if (config.componentSuffix) {
+    componentSuffix = fs.readFileSync(path.join(config.baseDir, config.componentSuffix), 'utf-8');
+  }
   
   var componentName = changeCase.camelCase(config.pkg.name.replace('angular-', ''));
   config.testDependencyFiles = config.testDependencyFiles || [];
