@@ -147,6 +147,15 @@ module.exports = function (gulp, config) {
     }, done);
   });
 
+  gulp.task('test:autowatch', function (done) {
+    karma.start({
+      configFile: path.join(__dirname, KARMA_CONF_FILE),
+      singleRun: false,
+      files: KARMA_TEST_FILES,
+      autoWatch: true
+    }, done);
+  });
+
   gulp.task('templates', function () {
     return gulp.src(SOURCE_TEMPLATE_FILES)
       .pipe(html2js())
