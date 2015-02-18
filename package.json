@@ -52,6 +52,7 @@
     "sofa-core": "^0.14.1",
     "sofa-storages": "^0.4.0",
     "sofa-testing": "^0.7.0",
-    "vinyl-paths": "^1.0.0"
+    "vinyl-paths": "^1.0.0",
+    "npm-owners": "^0.1.3"
   }
 }

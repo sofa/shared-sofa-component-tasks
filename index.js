@@ -274,6 +274,14 @@ module.exports = function (gulp, config) {
     });
   });
 
+  gulp.task('npm-owners', function(done) {
+    exec(path.join(__dirname, 'node_modules/.bin/npm-owners') + ' ' +
+         path.join(__dirname, 'npm-owners'), function(err, stdout) {
+        console.log(stdout);
+        done(err);
+    }); 
+  });
+
   gulp.task('watch', ['build'], function () {
     gulp.watch([SOURCE_JS_FILES], ['scripts']);
     gulp.watch([SOURCE_SASS_FILES], ['styles']);
