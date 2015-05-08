@@ -5,12 +5,12 @@ var karma = require('karma').server;
 var lazypipe = require('lazypipe');
 var del = require('del');
 var vinylPaths = require('vinyl-paths');
-var stylish = require('jshint-stylish');
 var conventionalChangelog = require('conventional-changelog');
 var exec = require('child_process').exec;
 var minimist = require('minimist');
 
-var jshint = require('gulp-jshint');
+var eslint = require('gulp-eslint');
+var babel = require('gulp-babel');
 var sass = require('gulp-sass');
 var cssmin = require('gulp-cssmin');
 var ngAnnotate = require('gulp-ng-annotate');
@@ -22,13 +22,15 @@ var ifThen = require('gulp-if');
 var rename = require('gulp-rename');
 var html2js = require('gulp-ng-html2js');
 var bump = require('gulp-bump');
+var replace = require('gulp-replace');
+var sofaAnnotate = require('gulp-sofa-define-annotation');
 
 var PREFIX_FILE = 'component.prefix',
     SUFFIX_FILE = 'component.suffix',
     PREFIX_NG_FILE = 'component.prefix.angular',
     SUFFIX_NG_FILE = 'component.suffix.angular',
     HEADER_FILE = 'header.txt',
-    JSHINT_FILE = '.jshintrc',
+    ESLINT_FILE = '.eslintrc',
     BOWER_JSON_FILE = 'bower.json',
     PACKAGE_JSON_FILE = 'package.json',
     CHANGELOG_FILE = 'CHANGELOG.md',
@@ -55,9 +57,6 @@ var componentSuffix = fs.readFileSync(path.join(__dirname, SUFFIX_FILE), 'utf-8'
 var componentNGPrefix = fs.readFileSync(path.join(__dirname, PREFIX_NG_FILE), 'utf-8');
 var componentNGSuffix = fs.readFileSync(path.join(__dirname, SUFFIX_NG_FILE), 'utf-8');
 
-var jshintConfig = JSON.parse(fs.readFileSync(path.join(__dirname, JSHINT_FILE), 'utf-8'));
-jshintConfig.lookup = false;
-
 var argv = minimist(process.argv.slice(2));
 var versionType = null;
 
@@ -68,6 +67,7 @@ var versionType = null;
 });
 
 module.exports = function (gulp, config) {
+  var sequence = require('run-sequence').use(gulp);
 
   if (config.componentPrefix) {
     componentPrefix = fs.readFileSync(path.join(config.baseDir, config.componentPrefix), 'utf-8');
@@ -97,62 +97,81 @@ module.exports = function (gulp, config) {
 
   KARMA_TEST_FILES.push(path.join(config.baseDir, SOURCE_SPEC_FILES));
 
-  var jshintTasks = lazypipe()
-    .pipe(jshint, jshintConfig)
-    .pipe(jshint.reporter, stylish)
-    .pipe(jshint.reporter, 'fail');
+  var eslintTasks = lazypipe()
+    .pipe(eslint, {
+      configFile: path.join(__dirname, ESLINT_FILE),
+      reset: true
+    })
+    .pipe(eslint.formatEach, 'stylish')
+    .pipe(eslint.failOnError);
 
   gulp.task('clean', function () {
     return gulp.src(DIST_DIR)
       .pipe(vinylPaths(del));
   });
 
-  gulp.task('jshint:src', function () {
+  gulp.task('linting:src', function () {
     return gulp.src([SOURCE_JS_FILES, '!src/**/*.tpl.js'])
-      .pipe(jshintTasks());
+      .pipe(eslintTasks());
   });
 
-  gulp.task('jshint:specs', function () {
+  gulp.task('linting:specs', function () {
     return gulp.src(SOURCE_SPEC_FILES)
-      .pipe(jshintTasks());
+      .pipe(eslintTasks());
   });
 
-  gulp.task('jshint', [
-    'jshint:src',
-    'jshint:specs'
+  gulp.task('linting', [
+    'linting:src',
+    'linting:specs'
   ]);
 
   gulp.task('test', function (done) {
+    var preproc = {};
+    preproc[path.join(config.baseDir, SOURCE_SPEC_FILES)] = ['babel'];
+    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['babel'];
     karma.start({
       configFile: path.join(__dirname, KARMA_CONF_FILE),
-      files: KARMA_TEST_FILES
+      files: KARMA_TEST_FILES,
+      preprocessors: preproc
     }, done);
   });
 
   gulp.task('test:continuous', ['templates'], function (done) {
+    var preproc = {};
+    preproc[path.join(config.baseDir, SOURCE_SPEC_FILES)] = ['babel'];
+    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['babel'];
     karma.start({
       configFile: path.join(__dirname, KARMA_CONF_FILE),
       singleRun: true,
-      files: KARMA_TEST_FILES
+      files: KARMA_TEST_FILES,
+      preprocessors: preproc
     }, function () {
       done();
     });
   });
 
   gulp.task('test:debug', function (done) {
-    karma.start({
-      configFile: path.join(__dirname, KARMA_CONF_FILE),
-      singleRun: false,
-      files: KARMA_TEST_FILES
-    }, done);
-  });
-
-  gulp.task('test:autowatch', function (done) {
+    var preproc = {};
+    preproc[path.join(config.baseDir, SOURCE_SPEC_FILES)] = ['babel'];
+    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['babel'];
     karma.start({
       configFile: path.join(__dirname, KARMA_CONF_FILE),
       singleRun: false,
       files: KARMA_TEST_FILES,
-      autoWatch: true
+      preprocessors: preproc
+    }, done);
+  });
+
+  gulp.task('test:autowatch', function (done) {
+    var preproc = {};
+    preproc[path.join(config.baseDir, SOURCE_SPEC_FILES)] = ['babel'];
+    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['babel'];
+    karma.start({
+      configFile: path.join(__dirname, KARMA_CONF_FILE),
+      singleRun: false,
+      files: KARMA_TEST_FILES,
+      autoWatch: true,
+      preprocessors: preproc
     }, done);
   });
 
@@ -183,69 +202,119 @@ module.exports = function (gulp, config) {
       .pipe(gulp.dest(config.baseDir));
   });
 
-  gulp.task('build', ['scripts', 'copy', 'styles']);
+  gulp.task('build', ['scripts', 'angular:transpiling', 'styles']);
   gulp.task('default', ['build']);
 
-  gulp.task('copy', ['styles', 'scripts'], function () {
-
+  function decorateScripts (files, type, headerStream, footerStream, angularSuffix) {
+    type = (type === 'ignore') ? '' : type;
     var date = new Date();
-
-    return gulp.src(['src/module.js', 'src/*angular.js'], { base: 'src/' })
+    var concatName = (angularSuffix) ? componentName + '.angular.js' : componentName + '.js';
+    return files
       .pipe(ngAnnotate({
         single_quote: true,
         add: true
       }))
-      .pipe(concat(componentName + '.angular.js'))
-      .pipe(header(componentNGPrefix))
-      .pipe(footer(componentNGSuffix))
+      .pipe(ifThen(type === 'ignore', concat(concatName)))
+      .pipe(headerStream)
+      .pipe(footerStream)
       .pipe(header(banner, {
         pkg: config.pkg,
         date: date
       }))
-      .pipe(gulp.dest(DIST_DIR))
+      .pipe(gulp.dest(DIST_DIR + '/' + type))
       .pipe(uglify())
-      .pipe(rename({
-        extname: '.min.js'
-      }))
+      .pipe(rename({extname: '.min.js'}))
       .pipe(header(banner, {
         pkg: config.pkg,
         date: date
       }))
-      .pipe(gulp.dest(DIST_DIR));
+      .pipe(gulp.dest(DIST_DIR + '/' + type));
+  }
+
+
+  ['common', 'amd', 'system', 'ignore'].forEach(function (type) {
+    gulp.task('scripts:transpile:' + type, function () {
+        var files = gulp.src([
+          SOURCE_SOFA_JS_FILE,
+          '!src/**/*.angular.js',
+          '!src/module.js',
+          SOURCE_JS_FILES
+        ])
+        .pipe(sofaAnnotate())
+        .pipe(babel({
+          modules: type
+        }));
+
+
+        return decorateScripts(
+          files, 
+          type,
+          isAngularPackage ? header(componentNGPrefix) : header(componentPrefix),
+          isAngularPackage ? footer(componentNGSuffix) : footer(componentSuffix)
+        );
+      });
+
+      gulp.task('angular:transpile:' + type, function () {
+        var files = gulp.src(['src/module.js', 'src/*angular.js'], { base: 'src/' })
+          .pipe(babel({
+              modules: type
+          }));
+
+          return decorateScripts(files, type, header(componentNGPrefix), footer(componentNGSuffix), true);
+      });
   });
 
-  gulp.task('scripts', ['clean', 'jshint', 'test:continuous'], function () {
+  gulp.task('scripts:copy', function () { 
+      var date = new Date();
+      return gulp.src([
+          SOURCE_SOFA_JS_FILE,
+          '!src/**/*.angular.js',
+          '!src/module.js',
+          SOURCE_JS_FILES
+        ])
+        .pipe(header(banner, {
+          pkg: config.pkg,
+          date: date
+        }))
+        .pipe(gulp.dest(DIST_DIR + '/es6'));
+  });
 
+  gulp.task('scripts', ['clean', 'linting', 'test:continuous'], function (done) {
+    return sequence(
+      [
+        'scripts:transpile:common',
+        'scripts:transpile:amd',
+        'scripts:transpile:system',
+        'scripts:transpile:ignore',
+        'scripts:copy'
+      ],
+      done
+    );
+  });
+
+  gulp.task('angular:copy', function () {
     var date = new Date();
-
-    gulp.src([
-      SOURCE_SOFA_JS_FILE,
-      '!src/**/*.angular.js',
-      '!src/module.js',
-      SOURCE_JS_FILES
-    ])
-    .pipe(ngAnnotate({
-      single_quote: true,
-      add: true
-    }))
-    .pipe(concat(componentName + '.js'))
-    .pipe(ifThen(isAngularPackage, header(componentNGPrefix), header(componentPrefix)))
-    .pipe(ifThen(isAngularPackage, footer(componentNGSuffix), footer(componentSuffix)))
-    .pipe(header(banner, {
-      pkg: config.pkg,
-      date: date
-    }))
-    .pipe(gulp.dest(DIST_DIR))
-    .pipe(uglify())
-    .pipe(rename({extname: '.min.js'}))
-    .pipe(header(banner, {
-      pkg: config.pkg,
-      date: date
-    }))
-    .pipe(gulp.dest(DIST_DIR));
-
-
+    return gulp.src(['src/module.js', 'src/*angular.js'], { base: 'src/' })
+      .pipe(header(banner, {
+        pkg: config.pkg,
+        date: date
+      }))
+      .pipe(gulp.dest(DIST_DIR + '/es6'));
   });
+
+  gulp.task('angular:transpiling', ['styles', 'scripts'], function (done) {
+    return sequence(
+      [
+        'angular:transpile:common',
+        'angular:transpile:amd',
+        'angular:transpile:system',
+        'angular:transpile:ignore',
+        'angular:copy'
+      ],
+      done
+    );
+  });
+
 
   gulp.task('styles', ['clean'], function () {
     return gulp.src(SOURCE_SASS_FILES)

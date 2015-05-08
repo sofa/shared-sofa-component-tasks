@@ -13,9 +13,16 @@ module.exports = function (karma) {
         plugins: [
             'karma-jasmine',
             'karma-firefox-launcher',
-            'karma-chrome-launcher'
+            'karma-chrome-launcher',
+            'karma-babel-preprocessor'
         ],
         preprocessors: {},
+        babelPreprocessor: {
+            options: {
+                modules: 'ignore',
+                sourceMaps: 'inline'
+            }
+        },
 
         /**
          * How to report, by default.
