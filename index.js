@@ -128,7 +128,7 @@ module.exports = function (gulp, config) {
   gulp.task('test', function (done) {
     var preproc = {};
     preproc[path.join(config.baseDir, SOURCE_SPEC_FILES)] = ['babel'];
-    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['babel'];
+    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['sofa-define-annotation', 'babel'];
     karma.start({
       configFile: path.join(__dirname, KARMA_CONF_FILE),
       files: KARMA_TEST_FILES,
@@ -139,7 +139,7 @@ module.exports = function (gulp, config) {
   gulp.task('test:continuous', ['templates'], function (done) {
     var preproc = {};
     preproc[path.join(config.baseDir, SOURCE_SPEC_FILES)] = ['babel'];
-    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['babel'];
+    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['sofa-define-annotation', 'babel'];
     karma.start({
       configFile: path.join(__dirname, KARMA_CONF_FILE),
       singleRun: true,
@@ -153,7 +153,7 @@ module.exports = function (gulp, config) {
   gulp.task('test:debug', function (done) {
     var preproc = {};
     preproc[path.join(config.baseDir, SOURCE_SPEC_FILES)] = ['babel'];
-    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['babel'];
+    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['sofa-define-annotation', 'babel'];
     karma.start({
       configFile: path.join(__dirname, KARMA_CONF_FILE),
       singleRun: false,
@@ -165,7 +165,7 @@ module.exports = function (gulp, config) {
   gulp.task('test:autowatch', function (done) {
     var preproc = {};
     preproc[path.join(config.baseDir, SOURCE_SPEC_FILES)] = ['babel'];
-    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['babel'];
+    preproc[path.join(config.baseDir, SOURCE_JS_FILES)] = ['sofa-define-annotation', 'babel'];
     karma.start({
       configFile: path.join(__dirname, KARMA_CONF_FILE),
       singleRun: false,

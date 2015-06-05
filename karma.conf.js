@@ -14,7 +14,11 @@ module.exports = function (karma) {
             'karma-jasmine',
             'karma-firefox-launcher',
             'karma-chrome-launcher',
-            'karma-babel-preprocessor'
+            'karma-babel-preprocessor',
+            {
+                'preprocessor:sofa-define-annotation':
+                require('gulp-sofa-define-annotation').karmaPlugin
+            }
         ],
         preprocessors: {},
         babelPreprocessor: {
